@@ -25,6 +25,7 @@ class SnapshotResult:
     has_uncommitted: bool
     commit_sha: str
     size_bytes: int
+    active_branch: str | None = None
 
 
 class SnapshotManager:
@@ -85,11 +86,14 @@ class SnapshotManager:
             await self._create_simple_bundle(local_path, bundle_path)
             commit_sha = await self.get_head_sha(local_path)
 
+        active_branch = await self.get_active_branch(local_path)
+
         return SnapshotResult(
             bundle_path=bundle_path,
             has_uncommitted=has_uncommitted,
             commit_sha=commit_sha,
             size_bytes=bundle_path.stat().st_size,
+            active_branch=active_branch,
         )
 
     async def has_uncommitted_changes(self, repo_path: Path) -> bool:
@@ -101,6 +105,17 @@ class SnapshotManager:
         """Get the current HEAD commit SHA."""
         stdout, _ = await self._run_git(repo_path, "rev-parse", "HEAD")
         return stdout.strip()
+
+    async def get_active_branch(self, repo_path: Path) -> str | None:
+        """Get the currently checked out branch name, or None if detached HEAD."""
+        try:
+            stdout, _ = await self._run_git(
+                repo_path, "symbolic-ref", "--short", "HEAD"
+            )
+            branch = stdout.strip()
+            return branch if branch else None
+        except Exception:
+            return None
 
     def get_bundle_path(self, org: str, name: str) -> Path:
         """Get the path where a bundle would be stored."""

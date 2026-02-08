@@ -117,6 +117,7 @@ class ShadowManager:
                 )
                 # Store the commit SHA for observability
                 spec.snapshot_commit = snapshot_result.commit_sha
+                spec.branch = snapshot_result.active_branch
 
         # Ensure image exists (auto-build if needed)
         builder = ImageBuilder(self.runtime)
@@ -190,6 +191,7 @@ class ShadowManager:
                     org=spec.org,
                     name=spec.name,
                     bundle_container_path=bundle_path,
+                    default_branch=spec.branch,
                 )
 
             # Configure git URL rewriting
@@ -202,10 +204,11 @@ class ShadowManager:
                     f"http://shadow:shadow@localhost:3000/{spec.org}/{spec.name}.git"
                 )
                 clone_dir = f"/workspace/{spec.org}/{spec.name}"
+                branch_flag = f" --branch {spec.branch}" if spec.branch else ""
                 await self.runtime.exec(
                     container_name,
                     f"mkdir -p /workspace/{spec.org} && "
-                    f"git clone {clone_url} {clone_dir}",
+                    f"git clone{branch_flag} {clone_url} {clone_dir}",
                 )
 
         except Exception as e:
@@ -315,6 +318,7 @@ class ShadowManager:
                     name=spec.name,
                 )
                 spec.snapshot_commit = snapshot_result.commit_sha
+                spec.branch = snapshot_result.active_branch
 
         # Push snapshots to Gitea
         gitea = GiteaClient(self.runtime, env.container_name)
@@ -325,6 +329,7 @@ class ShadowManager:
                 org=spec.org,
                 name=spec.name,
                 bundle_container_path=bundle_path,
+                default_branch=spec.branch,
             )
 
         # Add git URL rewriting for new sources
@@ -638,6 +643,8 @@ class ShadowManager:
                 source_info["local_path"] = str(r.local_path)
             if r.snapshot_commit:
                 source_info["snapshot_commit"] = r.snapshot_commit
+            if r.branch:
+                source_info["active_branch"] = r.branch
             local_sources.append(source_info)
 
         metadata: dict[str, object] = {
@@ -681,6 +688,8 @@ class ShadowManager:
                 # Restore snapshot_commit from metadata (fixes observability bug)
                 if "snapshot_commit" in source_info:
                     spec.snapshot_commit = source_info["snapshot_commit"]
+                if "active_branch" in source_info:
+                    spec.branch = source_info["active_branch"]
                 repo_specs.append(spec)
             elif isinstance(source_info, str):
                 repo_specs.append(RepoSpec.parse(source_info))

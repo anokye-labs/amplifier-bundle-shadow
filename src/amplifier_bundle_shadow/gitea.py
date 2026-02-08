@@ -79,12 +79,17 @@ class GiteaClient:
         # 201 = created, 422 = already exists
         return code == 201
 
-    async def create_repo(self, org: str, name: str) -> dict:
+    async def create_repo(
+        self, org: str, name: str, default_branch: str | None = None
+    ) -> dict:
         """Create a repository under an organization."""
+        payload: dict[str, object] = {"name": name, "private": False}
+        if default_branch:
+            payload["default_branch"] = default_branch
         code, stdout, stderr = await self._curl_api(
             "POST",
             f"/api/v1/orgs/{org}/repos",
-            {"name": name, "private": False},
+            payload,
         )
 
         if code not in (200, 201):
@@ -142,10 +147,11 @@ git push origin --tags --force 2>&1
         org: str,
         name: str,
         bundle_container_path: str,
+        default_branch: str | None = None,
     ) -> None:
         """Complete setup: create org, create repo, push bundle."""
         await self.create_org(org)
-        await self.create_repo(org, name)
+        await self.create_repo(org, name, default_branch=default_branch)
         await self.push_bundle(org, name, bundle_container_path)
 
     async def _exec(self, command: str) -> tuple[int, str, str]:
