@@ -416,3 +416,7 @@ For detailed information:
 - Full tool documentation: @shadow:context/shadow-instructions.md
 
 **Remember:** Your job is to create, verify, test, and report. Not to debug failures.
+
+---
+
+@foundation:context/LANGUAGE_PHILOSOPHY.md

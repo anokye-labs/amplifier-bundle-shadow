@@ -465,3 +465,7 @@ For detailed rubric criteria: @shadow:context/smoke-test-rubric.md
 For host-only rubric: @shadow:context/host-only-rubric.md
 For agent handoff protocol: @shadow:context/agent-handoff-protocol.md
 For shadow architecture: @shadow:context/shadow-instructions.md
+
+---
+
+@foundation:context/LANGUAGE_PHILOSOPHY.md
